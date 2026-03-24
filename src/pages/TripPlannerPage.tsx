@@ -28,8 +28,15 @@ export default function TripPlannerPage() {
   const [step, setStep] = useState(0);
   const [showMore, setShowMore] = useState(false);
 
-  if (!trip.isLoggedIn) { navigate("/login"); return null; }
-  if (!trip.selectedDestination || !trip.preferences) { navigate("/plan"); return null; }
+  const dest = trip.selectedDestination;
+  const prefs = trip.preferences;
+
+  useEffect(() => {
+    if (!trip.isLoggedIn) navigate("/login");
+    else if (!dest || !prefs) navigate("/plan");
+  }, [trip.isLoggedIn, dest, prefs, navigate]);
+
+  if (!dest || !prefs) return null;
 
   const dest = trip.selectedDestination;
   const prefs = trip.preferences;
