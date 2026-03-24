@@ -38,8 +38,6 @@ export default function TripPlannerPage() {
 
   if (!dest || !prefs) return null;
 
-  const dest = trip.selectedDestination;
-  const prefs = trip.preferences;
   const visa = visaRules[dest.id];
 
   // Generate data
