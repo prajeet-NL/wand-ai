@@ -36,11 +36,18 @@ export default function TripPlannerPage() {
     else if (!dest || !prefs) navigate("/plan");
   }, [trip.isLoggedIn, dest, prefs, navigate]);
 
+  useEffect(() => {
+    if (step === 5 && dest && prefs && trip.itinerary.length === 0 && trip.selectedHotel) {
+      const restaurants = getRestaurants(dest.id, prefs.foodPref, prefs.cuisinePref);
+      const it = generateItinerary(dest.id, prefs.duration, trip.selectedHotel, restaurants);
+      trip.setItinerary(it);
+      toast.success("Itinerary generated! Review and proceed to booking.");
+    }
+  }, [step]);
+
   if (!dest || !prefs) return null;
 
   const visa = visaRules[dest.id];
-
-  // Generate data
   const flights = generateFlights("Delhi", dest.name, prefs.budget);
   const hotels = generateHotels(dest.name, prefs.budget, prefs.breakfastIncluded);
   const restaurants = getRestaurants(dest.id, prefs.foodPref, prefs.cuisinePref);
@@ -69,18 +76,6 @@ export default function TripPlannerPage() {
     toast.success("Food recommendations saved");
     setStep(5);
   };
-
-  const generateAndConfirmItinerary = () => {
-    const it = generateItinerary(dest.id, prefs.duration, trip.selectedHotel, restaurants);
-    trip.setItinerary(it);
-    toast.success("Itinerary generated! Review and proceed to booking.");
-  };
-
-  useEffect(() => {
-    if (step === 5 && trip.itinerary.length === 0 && trip.selectedHotel) {
-      generateAndConfirmItinerary();
-    }
-  }, [step]);
 
   return (
     <div className="min-h-screen bg-background">
