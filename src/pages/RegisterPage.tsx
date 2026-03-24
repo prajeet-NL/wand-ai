@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTrip } from "@/contexts/TripContext";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,10 @@ import { Upload, CheckCircle2, Loader2 } from "lucide-react";
 export default function RegisterPage() {
   const { register } = useTrip();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [step, setStep] = useState<"passport" | "details" | "verify">("passport");
   const [loading, setLoading] = useState(false);
+  const [ocrMessage, setOcrMessage] = useState("");
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "", confirmPassword: "",
     passportNumber: "", dob: "", nationality: "",
@@ -21,21 +23,47 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
 
-  const handlePassportUpload = () => {
+  const handlePassportUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     setLoading(true);
-    // Simulate OCR
-    setTimeout(() => {
-      setForm(f => ({
-        ...f,
-        fullName: "Traveler " + Math.floor(Math.random() * 900 + 100),
-        passportNumber: "J" + Math.floor(Math.random() * 9000000 + 1000000),
-        dob: "1995-06-15",
-        nationality: "Indian",
+    setOcrMessage("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/passport-ocr", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload) {
+        throw new Error(payload?.error || "OCR request failed");
+      }
+
+      setForm((current) => ({
+        ...current,
+        fullName: payload.fullName || current.fullName,
+        passportNumber: payload.passportNumber || current.passportNumber,
+        dob: payload.dateOfBirth || current.dob,
+        nationality: payload.nationality || current.nationality,
       }));
-      setLoading(false);
       toast.success("Passport scanned successfully! Please verify details.");
       setStep("details");
-    }, 2000);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Automatic passport reading failed. Please enter details manually.";
+      setOcrMessage(message);
+      toast.error("Unable to auto-read passport. Please enter details manually.");
+      setStep("details");
+    } finally {
+      setLoading(false);
+      event.target.value = "";
+    }
   };
 
   const handleSubmit = () => {
@@ -53,20 +81,26 @@ export default function RegisterPage() {
 
   const verifyAndRegister = () => {
     if (otp !== "1234") { toast.error("Invalid OTP. Use 1234 for demo."); return; }
-    const success = register({
-      fullName: form.fullName, email: form.email, phone: form.phone,
-      passportNumber: form.passportNumber, dob: form.dob, nationality: form.nationality,
+
+    const result = register({
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      passportNumber: form.passportNumber,
+      dob: form.dob,
+      nationality: form.nationality,
     }, form.password);
-    if (success) {
-      toast.success("Welcome to WandAI! 🎉");
+
+    if (result.success) {
+      toast.success("Welcome to WandAI!");
       navigate("/plan");
     } else {
-      toast.error("Email already registered");
+      toast.error(result.error || "User already exists with this passport or email.");
     }
   };
 
-  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(f => ({ ...f, [key]: e.target.value }));
+  const set = (key: string) => (e: ChangeEvent<HTMLInputElement>) =>
+    setForm((current) => ({ ...current, [key]: e.target.value }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,8 +118,17 @@ export default function RegisterPage() {
           <CardContent className="space-y-4">
             {step === "passport" && (
               <div className="space-y-6 text-center">
-                <div className="border-2 border-dashed border-border rounded-xl p-12 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={handlePassportUpload}>
+                <div
+                  className="border-2 border-dashed border-border rounded-xl p-12 hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePassportUpload}
+                  />
                   {loading ? (
                     <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin" />
                   ) : (
@@ -94,16 +137,26 @@ export default function RegisterPage() {
                   <p className="mt-4 text-muted-foreground">
                     {loading ? "Scanning passport..." : "Click to upload passport image"}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">(Simulated OCR extraction)</p>
+                  <p className="text-xs text-muted-foreground mt-1">(Passport details will be auto-filled after OCR)</p>
                 </div>
+                {ocrMessage && (
+                  <p className="text-sm text-destructive">
+                    {ocrMessage}
+                  </p>
+                )}
                 <Button variant="outline" onClick={() => setStep("details")} className="w-full">
-                  Skip — Fill Manually
+                  Skip - Fill Manually
                 </Button>
               </div>
             )}
 
             {step === "details" && (
               <div className="space-y-4">
+                {ocrMessage && (
+                  <p className="text-sm text-destructive">
+                    {ocrMessage}
+                  </p>
+                )}
                 <div className="space-y-2">
                   <Label>Full Name *</Label>
                   <Input value={form.fullName} onChange={set("fullName")} />
@@ -156,8 +209,13 @@ export default function RegisterPage() {
                   </Button>
                 ) : (
                   <div className="space-y-3">
-                    <Input placeholder="Enter 4-digit OTP" value={otp} onChange={e => setOtp(e.target.value)}
-                      className="text-center text-lg tracking-widest" maxLength={4} />
+                    <Input
+                      placeholder="Enter 4-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="text-center text-lg tracking-widest"
+                      maxLength={4}
+                    />
                     <Button className="w-full gradient-ocean text-primary-foreground" onClick={verifyAndRegister}>
                       Verify & Create Account
                     </Button>

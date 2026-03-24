@@ -42,7 +42,7 @@ interface TripContextType {
   setUser: (u: UserProfile | null) => void;
   isLoggedIn: boolean;
   login: (email: string, password: string) => boolean;
-  register: (profile: UserProfile, password: string) => boolean;
+  register: (profile: UserProfile, password: string) => { success: boolean; error?: string };
   logout: () => void;
   preferences: TravelPreferences | null;
   setPreferences: (p: TravelPreferences) => void;
@@ -68,6 +68,14 @@ const TripContext = createContext<TripContextType | null>(null);
 
 // Simple mock user store
 const mockUsers: Record<string, { profile: UserProfile; password: string }> = {};
+const demoProfile: UserProfile = {
+  fullName: "Demo Traveler",
+  email: "demo@wandai.com",
+  phone: "+91 98765 43210",
+  passportNumber: "J1234567",
+  dob: "1995-06-15",
+  nationality: "Indian",
+};
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -82,10 +90,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const register = (profile: UserProfile, password: string) => {
-    if (mockUsers[profile.email]) return false;
+    const duplicateEmail = mockUsers[profile.email] || profile.email === demoProfile.email;
+    const duplicatePassport = Object.values(mockUsers).some(
+      (existing) => existing.profile.passportNumber === profile.passportNumber,
+    ) || profile.passportNumber === demoProfile.passportNumber;
+
+    if (duplicateEmail || duplicatePassport) {
+      return { success: false, error: "User already exists with this passport or email." };
+    }
+
     mockUsers[profile.email] = { profile, password };
     setUser(profile);
-    return true;
+    return { success: true };
   };
 
   const login = (email: string, password: string) => {
@@ -93,7 +109,6 @@ export function TripProvider({ children }: { children: ReactNode }) {
     if (u && u.password === password) { setUser(u.profile); return true; }
     // Demo login
     if (email === "demo@wandai.com" && password === "demo123") {
-      const demoProfile: UserProfile = { fullName: "Demo Traveler", email: "demo@wandai.com", phone: "+91 98765 43210", passportNumber: "J1234567", dob: "1995-06-15", nationality: "Indian" };
       setUser(demoProfile);
       return true;
     }
