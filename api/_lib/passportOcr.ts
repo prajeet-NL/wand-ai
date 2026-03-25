@@ -1,4 +1,4 @@
-import { extractPassportDetailsFromOcr, type ParsedPassportDetails } from "../../src/lib/passportMrz";
+import { extractPassportDetailsFromOcr, type ParsedPassportDetails } from "../../src/lib/passportMrz.js";
 
 export class PassportOcrError extends Error {
   statusCode: number;

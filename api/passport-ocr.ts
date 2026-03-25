@@ -1,6 +1,6 @@
 import formidable from "formidable";
 import type { IncomingMessage, ServerResponse } from "http";
-import { PassportOcrError, processPassportOcr } from "./_lib/passportOcr";
+import { PassportOcrError, processPassportOcr } from "./_lib/passportOcr.js";
 
 export const config = {
   api: {
