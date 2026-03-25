@@ -11,6 +11,11 @@ export class PassportOcrError extends Error {
 }
 
 export async function extractPassportData(fileBuffer: Buffer, filename: string, mimeType: string) {
+  const apiKey = process.env.OCR_SPACE_API_KEY;
+  if (!apiKey) {
+    throw new PassportOcrError("OCR service is not configured.", 500);
+  }
+
   const formData = new FormData();
   formData.append("file", new Blob([fileBuffer], { type: mimeType }), filename);
   formData.append("language", "eng");
@@ -22,7 +27,7 @@ export async function extractPassportData(fileBuffer: Buffer, filename: string, 
   const response = await fetch("https://api.ocr.space/parse/image", {
     method: "POST",
     headers: {
-      apikey: "K86639615588957",
+      apikey: apiKey,
     },
     body: formData,
   });
