@@ -246,11 +246,15 @@ serve(async (req) => {
       .join("\n")
       .trim();
 
+    console.log("OCR raw text:", JSON.stringify(parsedText));
+
     const result = extractPassportDetailsFromOcr(parsedText);
+
+    console.log("Parsed result:", JSON.stringify(result));
 
     if (!result) {
       return new Response(
-        JSON.stringify({ error: "Unable to auto-read passport. Please enter details manually." }),
+        JSON.stringify({ error: "Unable to auto-read passport. Please enter details manually.", rawText: parsedText }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
