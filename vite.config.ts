@@ -3,7 +3,7 @@ import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import { componentTagger } from "lovable-tagger";
 import { defineConfig } from "vite";
-import { extractPassportDetailsFromOcr } from "./src/lib/passportMrz";
+import { PassportOcrError, processPassportOcr } from "./server/passportOcr";
 
 function readRequestBody(req: IncomingMessage) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -46,34 +46,6 @@ function getUploadedFile(body: Buffer, contentType: string) {
   return null;
 }
 
-async function extractPassportData(fileBuffer: Buffer, filename: string, mimeType: string) {
-  const formData = new FormData();
-  formData.append("file", new Blob([fileBuffer], { type: mimeType }), filename);
-  formData.append("language", "eng");
-  formData.append("isOverlayRequired", "false");
-  formData.append("detectOrientation", "true");
-  formData.append("scale", "true");
-  formData.append("OCREngine", "2");
-
-  const response = await fetch("https://api.ocr.space/parse/image", {
-    method: "POST",
-    headers: {
-      apikey: "K86639615588957",
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("OCR.space request failed");
-  }
-
-  return response.json() as Promise<{
-    ParsedResults?: Array<{ ParsedText?: string }>;
-    IsErroredOnProcessing?: boolean;
-    ErrorMessage?: string[] | string;
-  }>;
-}
-
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json");
@@ -96,35 +68,19 @@ async function handlePassportOcr(req: IncomingMessage, res: ServerResponse) {
       return;
     }
 
-    const ocrResponse = await extractPassportData(
+    const parsedPassport = await processPassportOcr(
       uploadedFile.buffer,
       uploadedFile.filename,
       uploadedFile.mimeType,
     );
-    if (ocrResponse.IsErroredOnProcessing) {
-      sendJson(res, 502, {
-        error: Array.isArray(ocrResponse.ErrorMessage)
-          ? ocrResponse.ErrorMessage.join(", ")
-          : ocrResponse.ErrorMessage || "Automatic passport reading failed. Please enter details manually.",
-      });
-      return;
-    }
-
-    const parsedText = (ocrResponse.ParsedResults || [])
-      .map((result) => result.ParsedText || "")
-      .join("\n")
-      .trim();
-    const parsedPassport = extractPassportDetailsFromOcr(parsedText);
-
-    if (!parsedPassport) {
-      sendJson(res, 422, {
-        error: "Unable to auto-read passport. Please enter details manually.",
-      });
-      return;
-    }
 
     sendJson(res, 200, parsedPassport);
-  } catch {
+  } catch (error) {
+    if (error instanceof PassportOcrError) {
+      sendJson(res, error.statusCode, { error: error.message });
+      return;
+    }
+
     sendJson(res, 500, {
       error: "Automatic passport reading failed. Please enter details manually.",
     });
