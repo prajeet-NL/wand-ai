@@ -34,8 +34,13 @@ export default function RegisterPage() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("/api/passport-ocr", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/passport-ocr`, {
         method: "POST",
+        headers: {
+          "apikey": supabaseKey,
+        },
         body: formData,
       });
 
