@@ -3,7 +3,7 @@ import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import { componentTagger } from "lovable-tagger";
 import { defineConfig } from "vite";
-import { PassportOcrError, processPassportOcr } from "./server/passportOcr";
+import { PassportOcrError, processPassportOcr } from "./api/_lib/passportOcr";
 
 function readRequestBody(req: IncomingMessage) {
   return new Promise<Buffer>((resolve, reject) => {
