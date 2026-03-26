@@ -1,124 +1,168 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTrip } from "@/contexts/TripContext";
 import { Button } from "@/components/ui/button";
-import { Plane, LogOut, LayoutDashboard, Menu, X, Compass, Sparkles } from "lucide-react";
+import { Plane, LogOut, LayoutDashboard, Menu, Sparkles, X } from "lucide-react";
 import logo from "@/assets/wandai-logo.png";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 
 export default function Navbar() {
   const { isLoggedIn, user, logout } = useTrip();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  const isLanding = location.pathname === "/";
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const navClasses = `sticky top-0 z-50 transition-all duration-500 ${
-    scrolled
-      ? "glass border-b border-border/50 shadow-card"
-      : isLanding
-        ? "bg-transparent border-b border-transparent"
-        : "glass border-b border-border/50"
-  }`;
+  const navItems = isLoggedIn
+    ? [
+        { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+        { label: "Plan Trip", icon: Plane, path: "/plan" },
+      ]
+    : [{ label: "Why WandAI", icon: Sparkles, path: "/" }];
 
   return (
-    <nav className={navClasses}>
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <img src={logo} alt="WandAI" className="h-8 transition-transform duration-300 group-hover:scale-105" />
+    <nav className="sticky top-0 z-50 border-b border-white/10 bg-navy/70 backdrop-blur-2xl">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="container flex h-20 items-center justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="glass-panel flex h-11 w-11 items-center justify-center rounded-2xl border-white/15 bg-white/10">
+            <img src={logo} alt="WandAI" className="h-6" />
+          </div>
+          <div className="hidden sm:block">
+            <p className="font-display text-lg font-semibold tracking-tight text-white">WandAI</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-white/45">AI travel concierge</p>
+          </div>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
+          {navItems.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <Button
+                key={item.path}
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(item.path)}
+                className={`rounded-full px-4 text-sm ${
+                  active ? "bg-white text-navy hover:bg-white/95" : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:flex items-center gap-3">
           {isLoggedIn ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}
-                className={`gap-2 rounded-full px-4 ${location.pathname === "/dashboard" ? "bg-accent text-accent-foreground" : ""}`}>
-                <LayoutDashboard className="h-4 w-4" /> Dashboard
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/plan")}
-                className={`gap-2 rounded-full px-4 ${location.pathname === "/plan" ? "bg-accent text-accent-foreground" : ""}`}>
-                <Compass className="h-4 w-4" /> Plan Trip
-              </Button>
-              <div className="flex items-center gap-3 ml-3 pl-3 border-l border-border">
-                <div className="w-8 h-8 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground text-xs font-bold">
-                  {user?.fullName?.charAt(0) || "U"}
+              <div className="glass-panel hidden items-center gap-3 rounded-full border-white/15 px-4 py-2 lg:flex">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white">
+                  {user?.fullName?.charAt(0) || "W"}
                 </div>
-                <span className="text-sm font-medium text-foreground">{user?.fullName?.split(" ")[0]}</span>
-                <Button variant="ghost" size="icon" onClick={() => { logout(); navigate("/"); }}
-                  className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive">
-                  <LogOut className="h-3.5 w-3.5" />
-                </Button>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-white">{user?.fullName}</p>
+                  <p className="text-xs text-white/50">Ready for the next escape</p>
+                </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+                className="rounded-full border border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/login")}
-                className="rounded-full px-5">Log in</Button>
-              <Button size="sm" onClick={() => navigate("/register")}
-                className="gradient-ocean text-primary-foreground rounded-full px-5 shadow-glow hover:shadow-elevated transition-shadow gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" /> Get Started
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/login")}
+                className="rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+              >
+                Log in
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate("/register")}
+                className="rounded-full bg-white text-navy hover:bg-white/95"
+              >
+                Start Planning
               </Button>
             </>
           )}
         </div>
 
-        {/* Mobile toggle */}
-        <Button variant="ghost" size="icon" className="md:hidden rounded-full" onClick={() => setMobileOpen(!mobileOpen)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full border border-white/10 text-white md:hidden"
+          onClick={() => setMobileOpen((open) => !open)}
+        >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-border glass overflow-hidden"
-          >
-            <div className="p-4 space-y-2">
-              {isLoggedIn ? (
-                <>
-                  <div className="flex items-center gap-3 pb-3 mb-2 border-b border-border">
-                    <div className="w-10 h-10 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-bold">
-                      {user?.fullName?.charAt(0) || "U"}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{user?.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" className="w-full justify-start gap-2 rounded-xl" onClick={() => { navigate("/dashboard"); setMobileOpen(false); }}>
-                    <LayoutDashboard className="h-4 w-4" /> Dashboard
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2 rounded-xl" onClick={() => { navigate("/plan"); setMobileOpen(false); }}>
-                    <Compass className="h-4 w-4" /> Plan Trip
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start gap-2 rounded-xl text-destructive hover:text-destructive" onClick={() => { logout(); navigate("/"); setMobileOpen(false); }}>
-                    <LogOut className="h-4 w-4" /> Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" className="w-full rounded-xl" onClick={() => { navigate("/login"); setMobileOpen(false); }}>Log in</Button>
-                  <Button className="w-full gradient-ocean text-primary-foreground rounded-xl" onClick={() => { navigate("/register"); setMobileOpen(false); }}>Get Started</Button>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mobileOpen && (
+        <div className="border-t border-white/10 bg-navy/95 p-4 md:hidden">
+          <div className="space-y-2">
+            {navItems.map((item) => (
+              <Button
+                key={item.path}
+                variant="ghost"
+                className="w-full justify-start rounded-2xl text-white/80 hover:bg-white/10 hover:text-white"
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileOpen(false);
+                }}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            ))}
+            {isLoggedIn ? (
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-2xl text-rose-200 hover:bg-white/10"
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                  setMobileOpen(false);
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  className="w-full rounded-2xl text-white/80 hover:bg-white/10 hover:text-white"
+                  onClick={() => {
+                    navigate("/login");
+                    setMobileOpen(false);
+                  }}
+                >
+                  Log in
+                </Button>
+                <Button
+                  className="w-full rounded-2xl bg-white text-navy hover:bg-white/95"
+                  onClick={() => {
+                    navigate("/register");
+                    setMobileOpen(false);
+                  }}
+                >
+                  Start Planning
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

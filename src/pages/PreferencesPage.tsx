@@ -10,11 +10,15 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Slider } from "@/components/ui/slider";
-import { IndianRupee, Calendar, Users, Globe, Utensils, Sparkles, ArrowRight, Coffee } from "lucide-react";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/components/PageTransition";
-import { motion } from "framer-motion";
+import { IndianRupee, Calendar, Users, Globe, Utensils, Sparkles, ArrowRight } from "lucide-react";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const plannerNotes = [
+  "Seasonal fit is weighted heavily so recommendations feel realistic, not generic.",
+  "Food and breakfast preferences shape both destination ranking and stay suggestions.",
+  "Duration and traveler count influence pacing, comfort, and itinerary density.",
+];
 
 export default function PreferencesPage() {
   const { setPreferences, isLoggedIn } = useTrip();
@@ -31,166 +35,212 @@ export default function PreferencesPage() {
   if (!isLoggedIn) { navigate("/login"); return null; }
 
   const handleSubmit = () => {
-    const prefs: TravelPreferences = { budget, travelMonth: month + 1, duration, travelers, destType, foodPref, cuisinePref, breakfastIncluded };
+    const prefs: TravelPreferences = {
+      budget,
+      travelMonth: month + 1,
+      duration,
+      travelers,
+      destType,
+      foodPref,
+      cuisinePref,
+      breakfastIncluded,
+    };
     setPreferences(prefs);
-    toast.success("Finding perfect destinations...");
+    toast.success("Preferences saved! Finding perfect destinations...");
     navigate("/destinations");
   };
 
-  const budgetLabel = budget < 20000 ? "Budget-friendly" : budget < 80000 ? "Mid-range" : budget < 200000 ? "Premium" : "Luxury";
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#07121f_0%,#0d2136_36%,#eff5f8_36%,#f7fafc_100%)]">
       <Navbar />
-      <div className="container max-w-2xl py-10 md:py-16">
-        <FadeIn>
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-sm mb-4">
-              <Sparkles className="h-3.5 w-3.5" /> AI-powered matching
+      <div className="container py-10 md:py-16">
+        <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="space-y-6 text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.32em] text-white/60">
+              <Sparkles className="h-3.5 w-3.5" />
+              Planning profile
             </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold">Tell us about your trip</h1>
-            <p className="text-muted-foreground mt-2">We'll find the perfect destination for you</p>
+            <div className="max-w-xl space-y-5">
+              <h1 className="font-display text-5xl font-semibold tracking-tight md:text-6xl">
+                Tune the trip before we map the world.
+              </h1>
+              <p className="text-lg leading-8 text-white/68">
+                This stage should feel like briefing a private travel studio. Share your budget, pace, and taste,
+                and we will shape a destination shortlist that feels intentional.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="glass-panel rounded-[28px] p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-white/45">Budget</p>
+                <p className="mt-3 font-display text-3xl text-white">Rs. {budget.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="glass-panel rounded-[28px] p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-white/45">Window</p>
+                <p className="mt-3 font-display text-3xl text-white">{months[month].slice(0, 3)}</p>
+              </div>
+              <div className="glass-panel rounded-[28px] p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-white/45">Travelers</p>
+                <p className="mt-3 font-display text-3xl text-white">{travelers}</p>
+              </div>
+            </div>
+
+            <div className="glass-panel rounded-[32px] p-6">
+              <p className="text-xs uppercase tracking-[0.32em] text-white/45">How WandAI thinks</p>
+              <div className="mt-5 space-y-3">
+                {plannerNotes.map((note) => (
+                  <div key={note} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <span className="mt-2 h-2.5 w-2.5 rounded-full bg-teal" />
+                    <p className="text-sm leading-7 text-white/68">{note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </FadeIn>
 
-        <FadeIn delay={0.1}>
-          <Card className="shadow-elevated border-border/50 overflow-hidden">
-            <CardContent className="p-6 md:p-8">
-              <StaggerContainer className="space-y-8">
-                {/* Budget */}
-                <StaggerItem>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl gradient-ocean flex items-center justify-center">
-                          <IndianRupee className="h-4 w-4 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <Label className="text-sm font-semibold">Budget per person</Label>
-                          <p className="text-xs text-muted-foreground">{budgetLabel}</p>
-                        </div>
-                      </div>
-                      <p className="text-2xl font-display font-bold text-gradient">₹{budget.toLocaleString("en-IN")}</p>
-                    </div>
-                    <Slider value={[budget]} onValueChange={v => setBudget(v[0])} min={5000} max={500000} step={5000}
-                      className="[&_[role=slider]]:shadow-glow" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>₹5,000</span><span>₹5,00,000</span>
-                    </div>
-                  </div>
-                </StaggerItem>
+          <Card className="overflow-hidden rounded-[36px] border border-white/60 bg-white/90 shadow-[0_30px_100px_rgba(8,21,37,0.18)]">
+            <CardContent className="p-0">
+              <div className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(6,17,29,0.98),rgba(12,46,70,0.98))] px-8 py-8 text-white">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/45">Trip brief</p>
+                <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">Build your planning profile</h2>
+                <p className="mt-3 max-w-xl text-sm leading-7 text-white/65">
+                  A stronger brief creates a much better shortlist. Adjust anything now or refine it later after the first set of recommendations.
+                </p>
+              </div>
 
-                {/* Month & Duration */}
-                <StaggerItem>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+              <div className="space-y-8 p-8">
+                <div className="rounded-[28px] border border-slate-200 bg-slate-50/80 p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        <Label className="text-sm font-medium">Travel Month</Label>
+                        <IndianRupee className="h-5 w-5 text-primary" />
+                        <Label className="text-base font-semibold text-slate-900">Budget per traveler</Label>
                       </div>
-                      <Select value={String(month)} onValueChange={v => setMonth(Number(v))}>
-                        <SelectTrigger className="h-10 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {months.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <p className="mt-2 text-sm text-slate-500">We use this to balance flights, stays, and the overall ambition of the trip.</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Duration (days)</Label>
-                      <Input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} min={1} max={30}
-                        className="h-10 rounded-xl bg-muted/50 border-border/50" />
+                    <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                      Rs. {budget.toLocaleString("en-IN")}
                     </div>
                   </div>
-                </StaggerItem>
+                  <Slider value={[budget]} onValueChange={(v) => setBudget(v[0])} min={5000} max={500000} step={5000} className="mt-6" />
+                </div>
 
-                {/* Travelers & Dest Type */}
-                <StaggerItem>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
-                        <Label className="text-sm font-medium">Travelers</Label>
-                      </div>
-                      <Input type="number" value={travelers} onChange={e => setTravelers(Number(e.target.value))} min={1} max={10}
-                        className="h-10 rounded-xl bg-muted/50 border-border/50" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <Label className="font-semibold">Travel month</Label>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary" />
-                        <Label className="text-sm font-medium">Destination Type</Label>
-                      </div>
-                      <Select value={destType} onValueChange={v => setDestType(v as any)}>
-                        <SelectTrigger className="h-10 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="domestic">🇮🇳 Domestic</SelectItem>
-                          <SelectItem value="international">🌍 International</SelectItem>
-                          <SelectItem value="flexible">✨ Flexible</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">We prioritize places that are in season and at their best.</p>
+                    <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+                      <SelectTrigger className="mt-4 h-12 rounded-2xl bg-slate-50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((item, index) => <SelectItem key={item} value={String(index)}>{item}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </StaggerItem>
-
-                {/* Food Preferences */}
-                <StaggerItem>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Utensils className="h-4 w-4 text-primary" />
-                        <Label className="text-sm font-medium">Food Preference</Label>
-                      </div>
-                      <Select value={foodPref} onValueChange={v => setFoodPref(v as any)}>
-                        <SelectTrigger className="h-10 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="veg">🌿 Vegetarian</SelectItem>
-                          <SelectItem value="non-veg">🍖 Non-Vegetarian</SelectItem>
-                          <SelectItem value="vegan">🌱 Vegan</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      <Label className="font-semibold">Travelers</Label>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Cuisine Style</Label>
-                      <Select value={cuisinePref} onValueChange={v => setCuisinePref(v as any)}>
-                        <SelectTrigger className="h-10 rounded-xl bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="indian">Indian</SelectItem>
-                          <SelectItem value="local">Local</SelectItem>
-                          <SelectItem value="both">Both</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">Group size influences flight mix, room types, and pacing.</p>
+                    <Input
+                      type="number"
+                      value={travelers}
+                      onChange={(e) => setTravelers(Number(e.target.value))}
+                      min={1}
+                      max={10}
+                      className="mt-4 h-12 rounded-2xl bg-slate-50"
+                    />
                   </div>
-                </StaggerItem>
+                </div>
 
-                {/* Breakfast */}
-                <StaggerItem>
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center">
-                        <Coffee className="h-4 w-4 text-accent-foreground" />
-                      </div>
-                      <div>
-                        <Label className="font-medium text-sm">Breakfast included</Label>
-                        <p className="text-xs text-muted-foreground">Prefer hotels with breakfast</p>
-                      </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <Label className="font-semibold">Destination style</Label>
                     </div>
-                    <Switch checked={breakfastIncluded} onCheckedChange={setBreakfastIncluded} />
+                    <Select value={destType} onValueChange={(value) => setDestType(value as typeof destType)}>
+                      <SelectTrigger className="mt-4 h-12 rounded-2xl bg-slate-50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="domestic">Domestic only</SelectItem>
+                        <SelectItem value="international">International only</SelectItem>
+                        <SelectItem value="flexible">Best match anywhere</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </StaggerItem>
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <Label className="font-semibold">Duration in days</Label>
+                    <p className="mt-2 text-sm text-muted-foreground">Longer stays unlock deeper itineraries and richer local recommendations.</p>
+                    <Input
+                      type="number"
+                      value={duration}
+                      onChange={(e) => setDuration(Number(e.target.value))}
+                      min={1}
+                      max={30}
+                      className="mt-4 h-12 rounded-2xl bg-slate-50"
+                    />
+                  </div>
+                </div>
 
-                {/* Submit */}
-                <StaggerItem>
-                  <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                    <Button className="w-full h-12 gradient-ocean text-primary-foreground rounded-xl shadow-glow font-semibold text-base gap-2" onClick={handleSubmit}>
-                      Find Destinations <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </motion.div>
-                </StaggerItem>
-              </StaggerContainer>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <div className="flex items-center gap-2">
+                      <Utensils className="h-4 w-4 text-primary" />
+                      <Label className="font-semibold">Food preference</Label>
+                    </div>
+                    <Select value={foodPref} onValueChange={(value) => setFoodPref(value as typeof foodPref)}>
+                      <SelectTrigger className="mt-4 h-12 rounded-2xl bg-slate-50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Anything goes</SelectItem>
+                        <SelectItem value="veg">Vegetarian</SelectItem>
+                        <SelectItem value="non-veg">Non-vegetarian</SelectItem>
+                        <SelectItem value="vegan">Vegan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="rounded-[28px] border border-slate-200 p-5">
+                    <Label className="font-semibold">Cuisine preference</Label>
+                    <Select value={cuisinePref} onValueChange={(value) => setCuisinePref(value as typeof cuisinePref)}>
+                      <SelectTrigger className="mt-4 h-12 rounded-2xl bg-slate-50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="indian">Prefer Indian options</SelectItem>
+                        <SelectItem value="local">Prefer local flavor</SelectItem>
+                        <SelectItem value="both">Blend both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-[28px] border border-slate-200 bg-slate-50/70 p-5">
+                  <div>
+                    <Label className="font-semibold text-slate-900">Breakfast-first stays</Label>
+                    <p className="mt-2 text-sm text-muted-foreground">Bias recommendations toward hotels that smooth out mornings.</p>
+                  </div>
+                  <Switch checked={breakfastIncluded} onCheckedChange={setBreakfastIncluded} />
+                </div>
+
+                <Button
+                  className="h-14 w-full rounded-full bg-[linear-gradient(135deg,#06203a,#0e8578)] text-base font-semibold text-white shadow-[0_20px_50px_rgba(7,45,71,0.18)] hover:opacity-95"
+                  onClick={handleSubmit}
+                >
+                  Reveal destination matches
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        </FadeIn>
+        </div>
       </div>
     </div>
   );

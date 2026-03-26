@@ -8,9 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
-import { FadeIn } from "@/components/PageTransition";
-import { motion, AnimatePresence } from "framer-motion";
-import { CreditCard, Building, Smartphone, CheckCircle2, Loader2, Shield, Lock, MapPin, Plane as PlaneIcon, Building2 } from "lucide-react";
+import { CreditCard, Building, Smartphone, CheckCircle2, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 
 export default function PaymentPage() {
   const trip = useTrip();
@@ -21,12 +19,13 @@ export default function PaymentPage() {
   const [upiId, setUpiId] = useState("");
 
   if (!trip.isLoggedIn || !trip.selectedDestination || !trip.selectedFlight || !trip.selectedHotel) {
-    navigate("/plan"); return null;
+    navigate("/plan");
+    return null;
   }
 
   const flightCost = trip.selectedFlight.price * trip.preferences!.travelers;
   const hotelCost = trip.selectedHotel.pricePerNight * trip.preferences!.duration;
-  const transportCost = trip.selectedTransport.reduce((s, t) => s + t.price, 0);
+  const transportCost = trip.selectedTransport.reduce((sum, option) => sum + option.price, 0);
   const subtotal = flightCost + hotelCost + transportCost;
   const platformFee = Math.round(subtotal * 0.01);
   const total = subtotal + platformFee;
@@ -36,139 +35,180 @@ export default function PaymentPage() {
     setTimeout(() => {
       const booking: BookingDetails = {
         id: `WA-${Date.now().toString(36).toUpperCase()}`,
-        destination: trip.selectedDestination!, flight: trip.selectedFlight!,
-        hotel: trip.selectedHotel!, restaurants: trip.selectedRestaurants,
-        transport: trip.selectedTransport, itinerary: trip.itinerary,
-        totalCost: total, platformFee, paymentMethod: method,
-        status: "upcoming", bookedAt: new Date().toISOString(),
+        destination: trip.selectedDestination!,
+        flight: trip.selectedFlight!,
+        hotel: trip.selectedHotel!,
+        restaurants: trip.selectedRestaurants,
+        transport: trip.selectedTransport,
+        itinerary: trip.itinerary,
+        totalCost: total,
+        platformFee,
+        paymentMethod: method,
+        status: "upcoming",
+        bookedAt: new Date().toISOString(),
       };
       trip.addBooking(booking);
       setProcessing(false);
-      toast.success("Booking confirmed! 🎉");
+      toast.success("Payment successful! Booking confirmed.");
       navigate("/dashboard");
     }, 3000);
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#04111d_0%,#0a1f33_34%,#eef5f8_34%,#f8fbfc_100%)]">
       <Navbar />
-      <div className="container max-w-4xl py-8 md:py-12">
-        <FadeIn>
-          <div className="text-center mb-8">
-            <h1 className="font-display text-2xl md:text-3xl font-bold">Complete your booking</h1>
-            <p className="text-sm text-muted-foreground mt-1">Review and pay to confirm your trip</p>
-          </div>
-        </FadeIn>
-
-        <div className="grid md:grid-cols-5 gap-6">
-          {/* Summary */}
-          <FadeIn delay={0.05} className="md:col-span-2">
-            <div className="sticky top-24 space-y-4">
-              <Card className="shadow-elevated border-border/50 overflow-hidden">
-                <div className="relative h-32 overflow-hidden">
-                  <img src={trip.selectedDestination.image} alt={trip.selectedDestination.name}
-                    className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
-                  <div className="absolute bottom-3 left-4 text-primary-foreground">
-                    <div className="flex items-center gap-1 text-xs opacity-80"><MapPin className="h-3 w-3" />{trip.selectedDestination.country}</div>
-                    <h3 className="font-display font-bold text-lg">{trip.selectedDestination.name}</h3>
-                  </div>
+      <div className="container py-10 md:py-14">
+        <div className="rounded-[40px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(143,243,224,0.12),_transparent_18%),linear-gradient(135deg,rgba(5,15,26,0.98),rgba(9,29,47,0.96))] px-6 py-8 text-white shadow-[0_30px_120px_rgba(3,10,18,0.3)] md:px-10 md:py-10">
+          <div className="grid gap-8 lg:grid-cols-[1fr_0.88fr] lg:items-end">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.32em] text-white/60">
+                <Sparkles className="h-3.5 w-3.5" />
+                Final confirmation
+              </div>
+              <h1 className="font-display text-4xl font-semibold tracking-tight md:text-6xl">
+                Confirm a trip that already feels complete.
+              </h1>
+              <p className="max-w-2xl text-lg leading-8 text-white/66">
+                The booking screen should feel calm, trustworthy, and premium. Review the final structure, choose a payment method, and lock in the journey.
+              </p>
+            </div>
+            <div className="glass-panel rounded-[32px] p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                  <ShieldCheck className="h-5 w-5 text-teal" />
                 </div>
-                <CardContent className="p-4 space-y-3 text-sm">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <PlaneIcon className="h-3 w-3" /> {trip.selectedFlight.airline}
-                    <span className="mx-1">·</span>
-                    <Building2 className="h-3 w-3" /> {trip.selectedHotel.name}
-                  </div>
-                  <div className="space-y-2 pt-2 border-t border-border/50">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Flight ({trip.preferences!.travelers}×)</span><span>₹{flightCost.toLocaleString("en-IN")}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Hotel ({trip.preferences!.duration}n)</span><span>₹{hotelCost.toLocaleString("en-IN")}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>₹{transportCost.toLocaleString("en-IN")}</span></div>
-                  </div>
-                  <div className="border-t border-border/50 pt-2 space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground"><span>Platform Fee (1%)</span><span>₹{platformFee.toLocaleString("en-IN")}</span></div>
-                    <div className="flex justify-between text-lg font-bold pt-1">
-                      <span>Total</span><span className="text-gradient">₹{total.toLocaleString("en-IN")}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Shield className="h-3.5 w-3.5" /> 256-bit SSL encrypted
+                <div>
+                  <p className="font-display text-xl text-white">Protected checkout layer</p>
+                  <p className="mt-2 text-sm leading-7 text-white/62">
+                    This is still a simulated payment flow, but the experience is structured like a real premium booking confirmation.
+                  </p>
+                </div>
               </div>
             </div>
-          </FadeIn>
+          </div>
+        </div>
 
-          {/* Payment Form */}
-          <FadeIn delay={0.1} className="md:col-span-3">
-            <Card className="shadow-elevated border-border/50">
-              <CardHeader className="pb-4">
-                <CardTitle className="font-display text-lg flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-primary" /> Payment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <RadioGroup value={method} onValueChange={setMethod} className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "credit", label: "Credit Card", icon: CreditCard },
-                    { value: "debit", label: "Debit Card", icon: CreditCard },
-                    { value: "netbanking", label: "Net Banking", icon: Building },
-                    { value: "upi", label: "UPI", icon: Smartphone },
-                  ].map(m => (
-                    <Label key={m.value} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all
-                      ${method === m.value ? "border-primary bg-accent shadow-glow" : "border-border/50 hover:border-primary/30"}`}>
-                      <RadioGroupItem value={m.value} className="sr-only" />
-                      <m.icon className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">{m.label}</span>
-                    </Label>
-                  ))}
-                </RadioGroup>
+        <div className="mt-10 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+          <Card className="h-fit rounded-[36px] border border-slate-200 bg-white shadow-[0_26px_90px_rgba(8,21,37,0.08)]">
+            <CardHeader className="border-b border-slate-200/80 p-8">
+              <CardTitle className="font-display text-2xl">Booking summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 p-8">
+              <div className="overflow-hidden rounded-[28px] border border-slate-200">
+                <img src={trip.selectedDestination.image} alt={trip.selectedDestination.name} className="h-48 w-full object-cover" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Destination</p>
+                <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">{trip.selectedDestination.name}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{trip.selectedFlight.airline} • {trip.selectedHotel.name}</p>
+              </div>
+              <div className="space-y-3 rounded-[28px] border border-slate-200 bg-slate-50 p-5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Flight ({trip.preferences!.travelers}x)</span><span>Rs. {flightCost.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Hotel ({trip.preferences!.duration} nights)</span><span>Rs. {hotelCost.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>Rs. {transportCost.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between border-t border-slate-200 pt-3"><span className="text-muted-foreground">Subtotal</span><span>Rs. {subtotal.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between text-muted-foreground"><span>Platform fee (1%)</span><span>Rs. {platformFee.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-semibold">
+                  <span>Total</span><span className="font-display text-2xl">Rs. {total.toLocaleString("en-IN")}</span></div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <AnimatePresence mode="wait">
-                  {(method === "credit" || method === "debit") && (
-                    <motion.div key="card" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-3 overflow-hidden">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium">Card Number</Label>
-                        <Input placeholder="4242 4242 4242 4242" value={cardNumber}
-                          onChange={e => setCardNumber(e.target.value)} className="h-10 rounded-xl bg-muted/50 border-border/50" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5"><Label className="text-xs">Expiry</Label><Input placeholder="MM/YY" className="h-10 rounded-xl bg-muted/50 border-border/50" /></div>
-                        <div className="space-y-1.5"><Label className="text-xs">CVV</Label><Input placeholder="123" type="password" className="h-10 rounded-xl bg-muted/50 border-border/50" /></div>
-                      </div>
-                    </motion.div>
-                  )}
-                  {method === "upi" && (
-                    <motion.div key="upi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-1.5">
-                      <Label className="text-xs">UPI ID</Label>
-                      <Input placeholder="yourname@upi" value={upiId} onChange={e => setUpiId(e.target.value)} className="h-10 rounded-xl bg-muted/50 border-border/50" />
-                    </motion.div>
-                  )}
-                  {method === "netbanking" && (
-                    <motion.div key="net" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="p-4 rounded-xl bg-muted/50 border border-border/50 text-sm text-muted-foreground text-center">
-                      You'll be redirected to your bank (simulated)
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+          <Card className="rounded-[36px] border border-slate-200 bg-white shadow-[0_26px_90px_rgba(8,21,37,0.08)]">
+            <CardHeader className="border-b border-slate-200/80 p-8">
+              <CardTitle className="font-display text-2xl">Payment method</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-8">
+              <RadioGroup value={method} onValueChange={setMethod} className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { value: "credit", label: "Credit card", icon: CreditCard },
+                  { value: "debit", label: "Debit card", icon: CreditCard },
+                  { value: "netbanking", label: "Net banking", icon: Building },
+                  { value: "upi", label: "UPI", icon: Smartphone },
+                ].map((option) => (
+                  <Label
+                    key={option.value}
+                    className={`flex cursor-pointer items-center gap-3 rounded-[24px] border p-4 transition-all ${
+                      method === option.value ? "border-primary bg-accent" : "border-slate-200 hover:border-primary/40 hover:bg-slate-50"
+                    }`}
+                  >
+                    <RadioGroupItem value={option.value} className="sr-only" />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
+                      <option.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{option.label}</p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">secure</p>
+                    </div>
+                  </Label>
+                ))}
+              </RadioGroup>
 
-                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                  <Button className="w-full h-12 gradient-ocean text-primary-foreground rounded-xl shadow-glow font-semibold text-base gap-2"
-                    disabled={processing} onClick={handlePayment}>
-                    {processing ? (
-                      <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
-                    ) : (
-                      <><CheckCircle2 className="h-5 w-5" /> Pay ₹{total.toLocaleString("en-IN")}</>
-                    )}
-                  </Button>
-                </motion.div>
+              {(method === "credit" || method === "debit") && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Card Number</Label>
+                    <Input
+                      placeholder="4242 4242 4242 4242"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      className="h-12 rounded-2xl bg-slate-50"
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Expiry</Label>
+                      <Input placeholder="MM/YY" className="h-12 rounded-2xl bg-slate-50" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CVV</Label>
+                      <Input placeholder="123" type="password" className="h-12 rounded-2xl bg-slate-50" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                <p className="text-[10px] text-center text-muted-foreground">
-                  🔒 Simulated payment — no real charges
-                </p>
-              </CardContent>
-            </Card>
-          </FadeIn>
+              {method === "upi" && (
+                <div className="space-y-2">
+                  <Label>UPI ID</Label>
+                  <Input
+                    placeholder="yourname@upi"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    className="h-12 rounded-2xl bg-slate-50"
+                  />
+                </div>
+              )}
+
+              {method === "netbanking" && (
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-muted-foreground">
+                  You&apos;ll be redirected to your bank&apos;s portal as part of the simulated checkout handoff.
+                </div>
+              )}
+
+              <Button
+                className="h-14 w-full rounded-full bg-[linear-gradient(135deg,#06203a,#0e8578)] text-base font-semibold text-white hover:opacity-95"
+                disabled={processing}
+                onClick={handlePayment}
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Processing payment...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" />
+                    Pay Rs. {total.toLocaleString("en-IN")}
+                  </>
+                )}
+              </Button>
+
+              <p className="text-center text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Simulated payment • no real charges
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

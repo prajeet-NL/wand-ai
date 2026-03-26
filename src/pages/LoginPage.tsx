@@ -4,12 +4,10 @@ import { useTrip } from "@/contexts/TripContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
-import { FadeIn } from "@/components/PageTransition";
-import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Plane } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useTrip();
@@ -19,7 +17,7 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     if (login(email, password)) {
-      toast.success("Welcome back! ✈️");
+      toast.success("Welcome back!");
       navigate("/plan");
     } else {
       toast.error("Invalid credentials. Try demo@wandai.com / demo123");
@@ -27,53 +25,86 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#07121f_0%,#0d2136_44%,#eef5f8_44%,#f7fafc_100%)]">
       <Navbar />
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-        <div className="w-full max-w-[420px]">
-          <FadeIn>
-            <div className="text-center mb-8">
-              <div className="w-14 h-14 rounded-2xl gradient-ocean flex items-center justify-center mx-auto mb-5 shadow-glow">
-                <Plane className="h-7 w-7 text-primary-foreground" />
+      <div className="container py-12 md:py-20">
+        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div className="space-y-6 text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.32em] text-white/60">
+              <Sparkles className="h-3.5 w-3.5" />
+              Welcome back
+            </div>
+            <div className="max-w-xl space-y-5">
+              <h1 className="font-display text-5xl font-semibold tracking-tight md:text-6xl">
+                Step back into your next escape.
+              </h1>
+              <p className="text-lg leading-8 text-white/68">
+                Resume planning, refine your shortlist, or pick up right where your concierge-style journey left off.
+              </p>
+            </div>
+            <div className="glass-panel max-w-xl rounded-[32px] p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                  <ShieldCheck className="h-5 w-5 text-teal" />
+                </div>
+                <div>
+                  <p className="font-display text-xl text-white">Faster re-entry, same trip context</p>
+                  <p className="mt-2 text-sm leading-7 text-white/62">
+                    Your planning flow, bookings, and travel context stay organized so every return feels smooth and intentional.
+                  </p>
+                </div>
               </div>
-              <h1 className="font-display text-3xl font-bold">Welcome back</h1>
-              <p className="text-muted-foreground mt-2">Continue planning your next adventure</p>
             </div>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.1}>
-            <Card className="shadow-elevated border-border/50 overflow-hidden">
-              <CardContent className="p-6 space-y-5">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Email</Label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="demo@wandai.com" className="h-11 rounded-xl bg-muted/50 border-border/50 focus:bg-card" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Password</Label>
-                  <Input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••" className="h-11 rounded-xl bg-muted/50 border-border/50 focus:bg-card"
-                    onKeyDown={e => e.key === "Enter" && handleLogin()} />
-                </div>
-                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                  <Button className="w-full h-11 gradient-ocean text-primary-foreground rounded-xl shadow-glow font-semibold gap-2" onClick={handleLogin}>
-                    Log In <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-                <p className="text-center text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button onClick={() => navigate("/register")} className="text-primary font-medium hover:underline">Register</button>
-                </p>
-              </CardContent>
-            </Card>
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
-            <div className="mt-4 flex items-center gap-2 justify-center text-xs text-muted-foreground bg-muted/50 rounded-xl p-3 border border-border/50">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Demo: demo@wandai.com / demo123
-            </div>
-          </FadeIn>
+          <Card className="overflow-hidden rounded-[36px] border border-white/60 bg-white/92 shadow-[0_30px_100px_rgba(8,21,37,0.16)]">
+            <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(6,17,29,0.98),rgba(12,46,70,0.98))] px-8 py-8 text-white">
+              <CardTitle className="font-display text-3xl">Log in to WandAI</CardTitle>
+              <CardDescription className="text-white/65">
+                Reopen your planning canvas and continue building the perfect trip.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 p-8">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="demo@wandai.com"
+                  className="h-12 rounded-2xl bg-slate-50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="demo123"
+                  className="h-12 rounded-2xl bg-slate-50"
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+              <Button
+                className="h-14 w-full rounded-full bg-[linear-gradient(135deg,#06203a,#0e8578)] text-base font-semibold text-white hover:opacity-95"
+                onClick={handleLogin}
+              >
+                Enter your travel dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Don&apos;t have an account?{" "}
+                <button onClick={() => navigate("/register")} className="font-medium text-primary hover:underline">
+                  Register
+                </button>
+              </p>
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-center">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Demo access</p>
+                <p className="mt-2 text-sm text-slate-700">demo@wandai.com / demo123</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
