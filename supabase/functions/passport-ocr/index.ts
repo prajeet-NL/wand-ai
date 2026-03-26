@@ -148,40 +148,6 @@ function extractPassportDetailsFromOcr(parsedText: string) {
   return parseMRZ(parsedText) || parseLabeledPassportText(parsedText);
 }
 
-/* ── Multipart parser ── */
-
-function getFileFromFormData(body: Uint8Array, contentType: string) {
-  const boundaryMatch = contentType.match(/boundary=(.+)$/i);
-  if (!boundaryMatch) return null;
-
-  const boundary = `--${boundaryMatch[1]}`;
-  const text = new TextDecoder("latin1").decode(body);
-  const parts = text.split(boundary);
-
-  for (const part of parts) {
-    if (!part.includes('name="file"')) continue;
-    const headerEnd = part.indexOf("\r\n\r\n");
-    if (headerEnd === -1) continue;
-    const headers = part.slice(0, headerEnd);
-    const contentStart = headerEnd + 4;
-    const contentEnd = part.lastIndexOf("\r\n");
-    if (contentEnd <= contentStart) continue;
-
-    const filenameMatch = headers.match(/filename="([^"]+)"/i);
-    const typeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
-    const raw = part.slice(contentStart, contentEnd);
-    const buffer = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);
-
-    return {
-      filename: filenameMatch?.[1] || "passport.jpg",
-      mimeType: typeMatch?.[1]?.trim() || "image/jpeg",
-      buffer,
-    };
-  }
-  return null;
-}
-
 /* ── Handler ── */
 
 serve(async (req) => {
@@ -202,20 +168,23 @@ serve(async (req) => {
       throw { status: 500, message: "OCR service is not configured." };
     }
 
-    const contentType = req.headers.get("content-type") || "";
-    const body = new Uint8Array(await req.arrayBuffer());
-    const file = getFileFromFormData(body, contentType);
+    const formData = await req.formData();
+    const uploadedFile = formData.get("file");
 
-    if (!file) {
+    if (!(uploadedFile instanceof File)) {
       return new Response(JSON.stringify({ error: "Passport image is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const fileBuffer = new Uint8Array(await uploadedFile.arrayBuffer());
+    const filename = uploadedFile.name || "passport.jpg";
+    const mimeType = uploadedFile.type || "image/jpeg";
+
     // Call OCR.space
     const ocrForm = new FormData();
-    ocrForm.append("file", new Blob([file.buffer], { type: file.mimeType }), file.filename);
+    ocrForm.append("file", new Blob([fileBuffer], { type: mimeType }), filename);
     ocrForm.append("language", "eng");
     ocrForm.append("isOverlayRequired", "false");
     ocrForm.append("detectOrientation", "true");
@@ -233,6 +202,8 @@ serve(async (req) => {
     }
 
     const ocrData = await ocrRes.json();
+
+    console.log("OCR.space raw response:", JSON.stringify(ocrData));
 
     if (ocrData.IsErroredOnProcessing) {
       const msg = Array.isArray(ocrData.ErrorMessage)
